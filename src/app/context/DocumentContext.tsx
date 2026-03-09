@@ -15,16 +15,19 @@ interface DocumentContextType {
 const DocumentContext = createContext<DocumentContextType | undefined>(undefined);
 
 export const DocumentProvider = ({ children }: { children: React.ReactNode }) => {
-  const [documentos, setDocumentos] = useState<Documento[]>(() => {
-    const stored = localStorage.getItem('gaceta-documentos');
-    return stored ? JSON.parse(stored) : documentosIniciales;
-  });
 
-  // Guardar en localStorage cada vez que cambie el estado
+  const [documentos, setDocumentos] = useState<Documento[]>(() => {
+  if (typeof window === "undefined") {
+    return documentosIniciales;
+  }
+
+  const stored = localStorage.getItem("gaceta-documentos");
+  return stored ? JSON.parse(stored) : documentosIniciales;
+});
+
+  // Guardar cambios
   useEffect(() => {
-    if (documentos.length > 0) {
-      localStorage.setItem('gaceta-documentos', JSON.stringify(documentos));
-    }
+    localStorage.setItem('gaceta-documentos', JSON.stringify(documentos));
   }, [documentos]);
 
   const agregarDocumento = (nuevoDoc: Omit<Documento, 'id'>) => {
@@ -33,7 +36,9 @@ export const DocumentProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   const editarDocumento = (id: string, cambios: Partial<Documento>) => {
-    setDocumentos(documentos.map(doc => (doc.id === id ? { ...doc, ...cambios } : doc)));
+    setDocumentos(documentos.map(doc =>
+      doc.id === id ? { ...doc, ...cambios } : doc
+    ));
   };
 
   const eliminarDocumento = (id: string) => {
@@ -41,13 +46,14 @@ export const DocumentProvider = ({ children }: { children: React.ReactNode }) =>
   };
 
   const cargarDocumentos = () => {
-    // Forzar recarga desde localStorage (útil después de importar)
     const stored = localStorage.getItem('gaceta-documentos');
     if (stored) setDocumentos(JSON.parse(stored));
   };
 
   return (
-    <DocumentContext.Provider value={{ documentos, agregarDocumento, editarDocumento, eliminarDocumento, cargarDocumentos }}>
+    <DocumentContext.Provider
+      value={{ documentos, agregarDocumento, editarDocumento, eliminarDocumento, cargarDocumentos }}
+    >
       {children}
     </DocumentContext.Provider>
   );
